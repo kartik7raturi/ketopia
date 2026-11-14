@@ -1,37 +1,20 @@
-This is a large, multi-area change set. Here's how I'll approach the 15 points, grouped for efficiency. Please confirm before I start — some items need clarification.
+# Ketopia site-wide safety and usability review
 
-## Group A — Admin & Content (points 1, 4, 8, 9)
-- Extend the existing `AdminArticles` panel into a full rich-text editor: title, subheading, body (with formatting/fonts/headings), tags, cover image upload + replace, inline image insertion, publish/unpublish toggle.
-- Add an **AI Article Generator** tab: admin enters topics + schedule (daily cadence). A new edge function `generate-daily-article` runs on a `pg_cron` schedule, calls Lovable AI Gateway (google/gemini-2.5-flash) to draft an article from the next queued topic, and inserts it as published. New table `article_topics_queue` (topic, status, scheduled_for).
+## Goal
+Make Ketopia safer, more dependable, easier to navigate, and more useful for keto beginners without exposing private health or account data.
 
-## Group B — Community & Menu (points 2, 3)
-- Remove the duplicate "Success Stories" entry from the community menu, keeping "Transformations" as the single page (or vice versa — I'll keep the one already wired to `/transformations`).
-- Add a ⭐ icon next to "VIP Upgrade" in the header nav for non-VIP users.
+## Work plan
+1. **Close high-risk access gaps first.** Use the completed security scans to harden user subscription writes, paid course lesson/media access, admin-only article generation and publishing, notification email sending, and points/reward grants. Review the flagged database policies one by one: keep genuinely public recipes and reference content public, while limiting personal, account, and member activity to its owner or intended audience. Replace email-based admin shortcuts with the existing role checks.
+2. **Fix confirmed user-facing bugs.** Make the public contact form submit safely without inventing an account owner, return signed-in visitors to the page they originally requested, and make hydration updates report save failures and handle a new day correctly.
+3. **Protect privacy in tracking.** Associate signed-in product activity only with that user, keep guest activity anonymous, minimize retained attribution, and exclude health inputs, tracker pages, and sensitive URL data from marketing events. Keep server-side purchase events tied only to verified payment notifications; do not broaden collection of personal data.
+4. **Simplify the experience.** Review the existing header and home screen and organize the main actions into a short beginner-friendly path (start here, meals, progress, community), keeping the full toolkit accessible without duplicate navigation. Use public keto-community discussions only as high-level topic inspiration—no member data or copied personal posts.
+5. **Verify before finishing.** Re-run the security scan after changes, exercise the affected public and signed-in flows, inspect browser errors, and check the resulting build. Report any external account settings or full purchase flows that cannot be verified here.
 
-## Group C — Blog & Success Story bugs (points 5, 6)
-- Fix "Back to articles" button in `Blog.tsx` (likely a broken navigate call / stale route).
-- Fix Success Story / Transformations flow: uploaded photo not rendering (storage URL mismatch) and full-story modal not opening (missing click handler / route).
+## Technical details
+- Database access changes will use a Supabase migration and preserve deliberate public read paths; owner-scoped records will stay tied to `auth.uid()`.
+- Admin and payment entitlements will be checked using server-side roles and verified payment data, not client-visible email or local state.
+- Tracking will use allowlisted event fields and clean page paths; private health data will not be sent to advertising platforms.
+- Visual changes will use Ketopia's existing semantic design tokens and shadcn controls.
 
-## Group D — Payments & Webhooks (points 7, 10, 12)
-- New admin tab **Payment Test** listing all checkout URLs ($39.99 VIP JVZoo, course, etc.) with "Open in new tab" + "Simulate webhook" buttons that POST a signed test payload to `jvzoo-webhook`.
-- Audit `AdminWebhookLogs` + `jvzoo-webhook` function: verify signature check, retry handling, log rendering. Fix anything broken.
-- After JVZoo checkout: `ThankYou`/`ThankYouVip` already refetch subscription; I'll add a polling fallback (5s × 6) in case the webhook lands slightly after redirect, plus a toast + auto-route to `/progress`.
-
-## Group E — Analytics (point 13)
-- Add `trackLead('quiz_complete')`, `trackSignup`, `trackLogin`, `trackViewContent('vip_upgrade')`, `trackBuyNowClick('vip_yearly', 39.99)`, and a server-side `Purchase` event fired from `jvzoo-webhook` via Meta Conversions API when it grants `vip`.
-
-## Group F — VIP video from DB (point 14)
-- New table `site_settings (key text pk, value jsonb)`. Admin panel writes `vip_video_url`. `VipUpgrade.tsx` reads from DB (with localStorage cache as fallback). Removes the current localStorage-only behaviour.
-
-## Group G — Gating validation (points 11, 15)
-- Audit every `RequirePlan` usage to confirm only truly VIP-only routes are wrapped.
-- Ensure `AuthContext` fires `onAuthStateChange` correctly so header CTAs flip instantly on login/logout (add a subscription refetch on `SIGNED_IN`).
-- Manual E2E via Playwright: signup → quiz → login → visit every non-VIP page → confirm no redirect loop.
-
-## Questions before I start
-1. **Daily article generator**: what time of day should it run (UTC)? And do you want articles auto-published, or created as drafts for you to review?
-2. **AI model**: OK to use `google/gemini-2.5-flash` on the Lovable AI Gateway (already configured, no extra key needed)?
-3. **Community menu**: keep "Transformations" and delete "Success Stories" (they show the same data)?
-4. **Payment test panel**: do you want it to hit the real JVZoo webhook with a test payload (recorded in logs), or just open the real checkout URLs?
-
-Once you answer these I'll implement all 15 items in one pass.
+## Scope note
+This is a broad review, so changes will prioritize confirmed breakage and high-impact security/privacy risks. A literal audit of every third-party account setting, deployed database state, and paid checkout cannot be completed without the relevant external access and credentials.
