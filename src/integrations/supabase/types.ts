@@ -2384,34 +2384,64 @@ export type Database = {
         Row: {
           admin_response: string | null
           category: string
+          contact_email: string | null
           created_at: string
           id: string
           message: string
           status: string
           subject: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           admin_response?: string | null
           category?: string
+          contact_email?: string | null
           created_at?: string
           id?: string
           message: string
           status?: string
           subject: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           admin_response?: string | null
           category?: string
+          contact_email?: string | null
           created_at?: string
           id?: string
           message?: string
           status?: string
           subject?: string
           updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_point_events: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          points: number
+          reference_id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          points: number
+          reference_id: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          points?: number
+          reference_id?: string
           user_id?: string
         }
         Relationships: []
@@ -2831,35 +2861,35 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
-          city?: string | null
-          country?: string | null
+          city?: never
+          country?: never
           created_at?: string | null
           current_weight?: never
-          diet_preference?: string | null
-          diet_type?: string | null
+          diet_preference?: never
+          diet_type?: never
           display_name?: string | null
           follower_count?: number | null
           following_count?: number | null
           share_progress_publicly?: boolean | null
-          state?: string | null
-          town?: string | null
+          state?: never
+          town?: never
           user_id?: string | null
           username?: string | null
         }
         Update: {
           avatar_url?: string | null
-          city?: string | null
-          country?: string | null
+          city?: never
+          country?: never
           created_at?: string | null
           current_weight?: never
-          diet_preference?: string | null
-          diet_type?: string | null
+          diet_preference?: never
+          diet_type?: never
           display_name?: string | null
           follower_count?: number | null
           following_count?: number | null
           share_progress_publicly?: boolean | null
-          state?: string | null
-          town?: string | null
+          state?: never
+          town?: never
           user_id?: string | null
           username?: string | null
         }
@@ -2867,6 +2897,14 @@ export type Database = {
       }
     }
     Functions: {
+      award_activity_points: {
+        Args: { p_action: string; p_reference_id: string }
+        Returns: number
+      }
+      award_challenge_badges: {
+        Args: { p_user_challenge_id: string }
+        Returns: number
+      }
       award_points: { Args: { points_to_add: number }; Returns: undefined }
       decrement_recipe_upvotes: {
         Args: { recipe_id: string }
